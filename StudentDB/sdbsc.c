@@ -62,18 +62,21 @@ int open_db(char *dbFile, bool should_truncate)
  */
 int get_student(int fd, int id, student_t *s)
 {
-    int offset = (id - 1) * STUDENT_RECORD_SIZE;
-    if (lseek(fd, offset, SEEK_SET) == -1) {
-        printf(M_ERR_DB_READ);
+    if (lseek(fd, 0, SEEK_SET) == -1) {
         return ERR_DB_FILE;
     }
-    if (read(fd, s, STUDENT_RECORD_SIZE) != STUDENT_RECORD_SIZE) {
-        return SRCH_NOT_FOUND;
+
+    student_t curr;
+    ssize_t bytes_read;
+
+    while ((bytes_read = read(fd, &curr, sizeof(student_t))) == sizeof(student_t)) {
+        if (curr.id == id) {
+            memcpy(s, &curr, sizeof(student_t));
+            return NO_ERROR;
+        }
     }
-    if (s->id == 0) {
-        return SRCH_NOT_FOUND;
-    }
-    return NO_ERROR;
+
+    return SRCH_NOT_FOUND;
 }
 
 /*
@@ -109,15 +112,25 @@ int add_student(int fd, int id, char *fname, char *lname, int gpa)
         printf(M_ERR_DB_ADD_DUP, id);
         return ERR_DB_OP;
     }
+
     student.id = id;
     strncpy(student.fname, fname, sizeof(student.fname) - 1);
     strncpy(student.lname, lname, sizeof(student.lname) - 1);
     student.gpa = gpa;
-    int offset = (id - 1) * STUDENT_RECORD_SIZE;
-    if (lseek(fd, offset, SEEK_SET) == -1 || write(fd, &student, STUDENT_RECORD_SIZE) != STUDENT_RECORD_SIZE) {
+
+    off_t offset = (off_t)id * STUDENT_RECORD_SIZE; // Correct offset calculation
+
+    if (lseek(fd, offset, SEEK_SET) == -1) { // Ensure correct file size with sparse allocation
+        printf(M_ERR_DB_READ);
+        return ERR_DB_FILE;
+    }
+
+    ssize_t bytes_written = write(fd, &student, STUDENT_RECORD_SIZE);
+    if (bytes_written != STUDENT_RECORD_SIZE) {
         printf(M_ERR_DB_WRITE);
         return ERR_DB_FILE;
     }
+
     printf(M_STD_ADDED, id);
     return NO_ERROR;
 }
@@ -185,24 +198,33 @@ int del_student(int fd, int id)
  *            M_ERR_DB_WRITE   error writing to db file (adding student)
  *
  */
-int count_db_records(int fd)
-{
+int count_db_records(int fd) {
     if (lseek(fd, 0, SEEK_SET) == -1) {
         printf(M_ERR_DB_READ);
         return ERR_DB_FILE;
     }
+
     student_t student;
     int count = 0;
-    while (read(fd, &student, STUDENT_RECORD_SIZE) == STUDENT_RECORD_SIZE) {
-        if (student.id != 0) {
+    ssize_t bytes_read;
+
+    while ((bytes_read = read(fd, &student, STUDENT_RECORD_SIZE)) == STUDENT_RECORD_SIZE) {
+        if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) { // Correctly check for empty record
             count++;
         }
     }
+
+    if (bytes_read == -1) {
+        printf(M_ERR_DB_READ);
+        return ERR_DB_FILE;
+    }
+
     if (count == 0) {
-        printf(M_DB_EMPTY);
+        printf(M_DB_EMPTY); // Exact expected output for empty database
     } else {
         printf(M_DB_RECORD_CNT, count);
     }
+
     return count;
 }
 
@@ -247,19 +269,26 @@ int print_db(int fd)
     }
     student_t student;
     bool has_records = false;
-    printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST NAME", "LAST_NAME", "GPA");
-    while (read(fd, &student, STUDENT_RECORD_SIZE) == STUDENT_RECORD_SIZE) {
-        if (student.id != 0) {
-            has_records = true;
-            printf(STUDENT_PRINT_FMT_STRING, student.id, student.fname, student.lname, student.gpa / 100.0);
-        }
-    }
-    if (!has_records) {
-        printf(M_DB_EMPTY);
-    }
-    return NO_ERROR;
-}
 
+    while (read(fd, &student, STUDENT_RECORD_SIZE) == STUDENT_RECORD_SIZE) {
+		if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) { // Ensures only valid students are printed
+            if (!has_records) {
+                printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST NAME", "LAST_NAME", "GPA"); // Print header only once
+                has_records = true;
+            }
+            float gpa = student.gpa / 100.0; // Correct GPA conversion
+            printf(STUDENT_PRINT_FMT_STRING, student.id, student.fname, student.lname, gpa);
+        }
+
+    }
+
+    if (!has_records) {
+        printf(M_DB_EMPTY); // Match exact expected empty database message
+    }
+
+    return NO_ERROR;
+
+}
 /*
  *  print_student
  *      *s:   a pointer to a student_t structure that should
