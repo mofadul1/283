@@ -79,6 +79,7 @@ int get_student(int fd, int id, student_t *s)
     return SRCH_NOT_FOUND;
 }
 
+
 /*
  *  add_student
  *      fd:     linux file descriptor
@@ -134,6 +135,7 @@ int add_student(int fd, int id, char *fname, char *lname, int gpa)
     printf(M_STD_ADDED, id);
     return NO_ERROR;
 }
+
 
 /*
  *  del_student
@@ -261,7 +263,7 @@ int count_db_records(int fd) {
  *            M_ERR_DB_READ    error reading or seeking the database file
  *
  */
-int print_db(int fd)
+ int print_db(int fd)
 {
     if (lseek(fd, 0, SEEK_SET) == -1) {
         printf(M_ERR_DB_READ);
@@ -271,7 +273,7 @@ int print_db(int fd)
     bool has_records = false;
 
     while (read(fd, &student, STUDENT_RECORD_SIZE) == STUDENT_RECORD_SIZE) {
-		if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) { // Ensures only valid students are printed
+        if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) { // Ensures only valid students are printed
             if (!has_records) {
                 printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST NAME", "LAST_NAME", "GPA"); // Print header only once
                 has_records = true;
@@ -279,7 +281,6 @@ int print_db(int fd)
             float gpa = student.gpa / 100.0; // Correct GPA conversion
             printf(STUDENT_PRINT_FMT_STRING, student.id, student.fname, student.lname, gpa);
         }
-
     }
 
     if (!has_records) {
@@ -287,8 +288,9 @@ int print_db(int fd)
     }
 
     return NO_ERROR;
-
 }
+
+
 /*
  *  print_student
  *      *s:   a pointer to a student_t structure that should
