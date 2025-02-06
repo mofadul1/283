@@ -63,7 +63,7 @@ int open_db(char *dbFile, bool should_truncate)
 int get_student(int fd, int id, student_t *s)
 {
     if (lseek(fd, 0, SEEK_SET) == -1) {
-        return ERR_DB_FILE;
+        return ERR_DB_FILE; // Error seeking to the start of the file
     }
 
     student_t curr;
@@ -71,14 +71,13 @@ int get_student(int fd, int id, student_t *s)
 
     while ((bytes_read = read(fd, &curr, sizeof(student_t))) == sizeof(student_t)) {
         if (curr.id == id) {
-            memcpy(s, &curr, sizeof(student_t));
+            memcpy(s, &curr, sizeof(student_t)); // Copy the student data
             return NO_ERROR;
         }
     }
 
-    return SRCH_NOT_FOUND;
+    return SRCH_NOT_FOUND; // Student not found
 }
-
 
 /*
  *  add_student
@@ -119,9 +118,9 @@ int add_student(int fd, int id, char *fname, char *lname, int gpa)
     strncpy(student.lname, lname, sizeof(student.lname) - 1);
     student.gpa = gpa;
 
-    off_t offset = (off_t)id * STUDENT_RECORD_SIZE; // Correct offset calculation
+    off_t offset = (off_t)id * STUDENT_RECORD_SIZE; 
 
-    if (lseek(fd, offset, SEEK_SET) == -1) { // Ensure correct file size with sparse allocation
+    if (lseek(fd, offset, SEEK_SET) == -1) {
         printf(M_ERR_DB_READ);
         return ERR_DB_FILE;
     }
@@ -176,6 +175,7 @@ int del_student(int fd, int id)
     return NO_ERROR;
 }
 
+
 /*
  *  count_db_records
  *      fd:     linux file descriptor
@@ -211,7 +211,7 @@ int count_db_records(int fd) {
     ssize_t bytes_read;
 
     while ((bytes_read = read(fd, &student, STUDENT_RECORD_SIZE)) == STUDENT_RECORD_SIZE) {
-        if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) { // Correctly check for empty record
+        if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) { 
             count++;
         }
     }
@@ -222,7 +222,7 @@ int count_db_records(int fd) {
     }
 
     if (count == 0) {
-        printf(M_DB_EMPTY); // Exact expected output for empty database
+        printf(M_DB_EMPTY); 
     } else {
         printf(M_DB_RECORD_CNT, count);
     }
@@ -263,6 +263,7 @@ int count_db_records(int fd) {
  *            M_ERR_DB_READ    error reading or seeking the database file
  *
  */
+
  int print_db(int fd)
 {
     if (lseek(fd, 0, SEEK_SET) == -1) {
@@ -273,23 +274,23 @@ int count_db_records(int fd) {
     bool has_records = false;
 
     while (read(fd, &student, STUDENT_RECORD_SIZE) == STUDENT_RECORD_SIZE) {
-        if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) { // Ensures only valid students are printed
+        if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) { 
             if (!has_records) {
-                printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST NAME", "LAST_NAME", "GPA"); // Print header only once
+                printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST NAME", "LAST_NAME", "GPA"); 
                 has_records = true;
             }
-            float gpa = student.gpa / 100.0; // Correct GPA conversion
+            float gpa = student.gpa / 100.0; 
             printf(STUDENT_PRINT_FMT_STRING, student.id, student.fname, student.lname, gpa);
         }
     }
 
     if (!has_records) {
-        printf(M_DB_EMPTY); // Match exact expected empty database message
+        printf(M_DB_EMPTY);
     }
 
     return NO_ERROR;
 }
-
+   
 
 /*
  *  print_student
