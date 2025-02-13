@@ -24,9 +24,18 @@ Untrimmed spaces can cause misinterpretation of commands, leading to execution e
 ### 4. Research on STDIN, STDOUT, and STDERR in Linux.
 
 #### **4a. Three redirection examples and challenges:**
-1. **Output to file (`>` and `>>`)** – `ls > output.txt`, handles file writing but needs proper error handling.  
-2. **Input from file (`<`)** – `sort < names.txt`, must check if the file exists.  
-3. **Redirecting errors (`2>`)** – `gcc program.c 2> errors.txt`, requires distinguishing STDERR from STDOUT.
+1. **Redirecting output to a file (`>` and `>>`)**  
+   - Example: `ls > output.txt` (creates/overwrites file), `echo "Hello" >> log.txt` (appends).  
+   - **Challenge:** We must open the file correctly, handle write permissions, and ensure we don’t overwrite important data unintentionally.
+
+2. **Redirecting input from a file (`<`)**  
+   - Example: `sort < names.txt` (reads from `names.txt`).  
+   - **Challenge:** If the file doesn’t exist, the command will fail. We need to check for errors and display a clear message.
+
+3. **Redirecting errors (`2>`)**  
+   - Example: `gcc program.c 2> errors.txt` (captures errors separately).  
+   - **Challenge:** STDOUT and STDERR must be handled separately, ensuring error messages aren’t mixed with regular output unless explicitly merged.
+
 
 ---
 
