@@ -111,19 +111,40 @@ int exec_cmd(cmd_buff_t *cmd) {
 int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff) {
     char *token;
     int arg_count = 0;
+    bool in_quotes = false;
+    char *ptr = cmd_line;
+    char *arg_start = NULL;
 
     cmd_buff->_cmd_buffer = strdup(cmd_line);
     if (!cmd_buff->_cmd_buffer) return ERR_MEMORY;
 
-    token = strtok(cmd_buff->_cmd_buffer, " ");
-    while (token && arg_count < CMD_ARGV_MAX - 1) {
-        cmd_buff->argv[arg_count++] = token;
-        token = strtok(NULL, " ");
+    while (*ptr) {
+        if (*ptr == '"') { 
+            in_quotes = !in_quotes;
+            if (in_quotes) {
+                arg_start = ptr + 1; 
+            } else {
+                *ptr = '\0'; 
+                cmd_buff->argv[arg_count++] = arg_start;
+            }
+        } else if (!in_quotes && isspace(*ptr)) {
+            *ptr = '\0';  
+            if (arg_start) {
+                cmd_buff->argv[arg_count++] = arg_start;
+                arg_start = NULL;
+            }
+        } else if (!arg_start) {
+            arg_start = ptr; 
+        }
+        ptr++;
     }
+
+    if (arg_start) {
+        cmd_buff->argv[arg_count++] = arg_start;
+    }
+
     cmd_buff->argv[arg_count] = NULL;
     cmd_buff->argc = arg_count;
 
     return (arg_count > 0) ? OK : WARN_NO_CMDS;
 }
-
-
