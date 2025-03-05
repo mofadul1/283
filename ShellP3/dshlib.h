@@ -9,6 +9,8 @@
 #define CMD_ARGV_MAX (CMD_MAX + 1)
 // Longest command that can be read from the shell
 #define SH_CMD_MAX EXE_MAX + ARG_MAX
+#define CMD_ERR_EXECUTE "error: failed to execute command: %s\n"
+
 
 typedef struct command
 {
