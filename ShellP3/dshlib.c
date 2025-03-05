@@ -63,7 +63,7 @@ int exec_local_cmd_loop()
             {
                 if (status != OK_EXIT)
                 {
-                    printf(CMD_ERR_EXECUTE, cmd_line);
+                    fprintf(stderr, CMD_ERR_EXECUTE, cmd_line);
                 }
                 else
                 {
@@ -106,7 +106,7 @@ int exec_local_cmd_loop()
 
             if ((status = exec_cmd(&cmd_buff)) != OK)
             {
-                printf(CMD_ERR_EXECUTE, cmd_line);
+                fprintf(stderr, CMD_ERR_EXECUTE, cmd_line);
             }
 
             free_cmd_buff(&cmd_buff);
