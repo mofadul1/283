@@ -18,7 +18,8 @@
 
 
 int start_server(char *ifaces, int port, int is_threaded) {
-    int svr_socket = boot_server(ifaces, port);
+	(void)is_threaded;
+	int svr_socket = boot_server(ifaces, port);
     if (svr_socket < 0) return svr_socket;
 
     int rc = process_cli_requests(svr_socket);
@@ -72,5 +73,28 @@ int exec_client_requests(int cli_socket) {
 
     free(io_buff);
     return OK;
+}
+
+int stop_server(int svr_socket) {
+    return close(svr_socket);
+}
+
+int send_message_eof(int cli_socket) {
+    int send_len = (int)sizeof(RDSH_EOF_CHAR);
+    int sent_len = send(cli_socket, &RDSH_EOF_CHAR, send_len, 0);
+
+    if (sent_len != send_len) {
+        return ERR_RDSH_COMMUNICATION;
+    }
+    return OK;
+}
+
+int send_message_string(int cli_socket, char *buff) {
+    int sent_len = send(cli_socket, buff, strlen(buff), 0);
+    if (sent_len < 0) {
+        return ERR_RDSH_COMMUNICATION;
+    }
+
+    return send_message_eof(cli_socket); // Ensure the EOF character is sent
 }
 

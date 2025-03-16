@@ -6,8 +6,8 @@ CFLAGS = -Wall -Wextra -g
 TARGET = dsh
 
 # Find all source and header files
-SRCS = $(wildcard *.c)
-HDRS = $(wildcard *.h)
+SRCS = dsh_cli.c dshlib.c rsh_cli.c rsh_server.c
+HDRS = dshlib.h rshlib.h
 
 # Default target
 all: $(TARGET)
